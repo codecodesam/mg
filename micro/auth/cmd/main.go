@@ -1,25 +1,50 @@
 package main
 
 import (
+	"net/http"
 	"os"
 	"time"
 
+	"github.com/codecodesam/mg/micro/auth/api/router"
 	"github.com/codecodesam/mg/pkg/config"
 	"github.com/codecodesam/mg/pkg/logger"
+	"github.com/gin-gonic/gin"
 )
 
-// TODO 文件没生成
 func main() {
-	// 日志初始化
+	// init logger
 	initLogger()
-	// 初始化配置
+	// init config
 	initConfig()
-
-	logger.Log.Info("test...")
-
+	// init web gin
+	initWeb()
+	// close logger and flush content to file system
 	closeLogger()
+}
 
-	time.Sleep(10 * time.Second)
+func initWeb() {
+	engine := gin.Default()
+	router.Register(engine)
+
+	// load config
+	addr, getAddrErr := config.GetStringValue("IP_PORT")
+	if getAddrErr != nil {
+		panic(getAddrErr)
+	}
+	//rt := config.GetIntValueWithDefaultValue("SERVER_READ_TIMEOUT", 60)
+	//wt := config.GetIntValueWithDefaultValue("SERVER_WRITE_TIMEOUT", 60)
+
+	server := &http.Server{
+		Addr:           addr,
+		Handler:        engine,
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	err := server.ListenAndServe()
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initConfig() {
@@ -29,11 +54,14 @@ func initConfig() {
 func initLogger() {
 	path := os.Getenv("LOGGER_PATH")
 	if path == "" {
-		panic("环境变量中找不到日志的路径")
+		panic("can't find logger path")
 	}
 	logger.InitLogger(path)
 }
 
 func closeLogger() {
-	logger.Log.Sync()
+	err := logger.Log.Sync()
+	if err != nil {
+		// ignore this error
+	}
 }

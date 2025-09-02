@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+
+	"github.com/codecodesam/mg/pkg/util"
 )
 
 const (
@@ -39,42 +41,54 @@ func GetStringValue(key string) (string, error) {
 	}
 	strValue, ok := value.(string)
 	if !ok {
-		return "", errors.New(fmt.Sprintf("无法转换值类型[%t]->[string]", value))
+		return "", errors.New(fmt.Sprintf("can not cast to type[%t]->[string]", value))
 	}
 	return strValue, nil
+}
+
+func GetIntValue(key string) (int, error) {
+	value := cm.parseResult[key]
+	if value == nil {
+		return 0, errors.New(fmt.Sprintf("the key is not found,%s", key))
+	}
+	intValue, ok := value.(int)
+	if !ok {
+		return 0, errors.New(fmt.Sprintf("the key is not int,%s", key))
+	}
+	return intValue, nil
+}
+
+func GetIntValueWithDefaultValue(key string, df int) int {
+	value, err := GetIntValue(key)
+	if err != nil {
+		return df
+	}
+	return value
 }
 
 func NewConfigManager() {
 	once.Do(func() {
 		var md []MetaData
-		// 加载文件配置
 		{
 			var fl Loader = FileConfigLoader{}
-			// 加载逻辑
 			fileMetaData, fileErr := fl.Load()
 			if fileErr != nil {
 				panic(fileErr)
 			}
 			md = append(md, fileMetaData)
 		}
-		// 设置属性
 		cm.container = md
-		// 解析属性
-		var pr map[string]any
-		//
+		var pr = make(map[string]any)
 		for _, meta := range md {
 			if meta.Format == JSON {
-				// 解析json
 				m := map[string]any{}
-				// json序列化
 				unmarshalErr := json.Unmarshal([]byte(meta.Content), &m)
 				if unmarshalErr != nil {
 					panic(unmarshalErr)
 				}
-				// TODO 追加map
-
+				util.CopyMap(pr, m)
 			} else if meta.Format == YAML {
-				// 解析yaml
+				// TODO
 			}
 		}
 		cm.parseResult = pr
