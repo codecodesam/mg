@@ -12,6 +12,7 @@ import (
 const (
 	JSON = "json"
 	YAML = "yaml"
+	TOML = "toml"
 )
 
 type MetaData struct {

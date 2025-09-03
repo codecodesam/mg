@@ -21,7 +21,7 @@ var (
 
 func (loader FileConfigLoader) Load() (MetaData, error) {
 	fileLoaderOnce.Do(func() {
-		fp := os.Getenv("APP_CONFIG_PATH")
+		fp := os.Getenv(ENV_APP_CONFIG_PATH)
 		if fp == "" {
 			logger.Log.Error("can not find env APP_CONFIG_PATH")
 			err = errors.New("can not find env APP_CONFIG_PATH")
